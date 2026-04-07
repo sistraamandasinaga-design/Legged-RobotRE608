@@ -1,85 +1,80 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
+from matplotlib.animation import FuncAnimation
 
 # ==========================================================
-# 1. CLASS FORWARD KINEMATICS (MURNI)
+# 1. CLASS FORWARD KINEMATICS (SISTRA AMANDA SINAGA)
 # ==========================================================
 class ForwardKinematics3DOF:
     def __init__(self, L1, L2, L3):
         self.L = [L1, L2, L3]
 
     def calculate(self, t1_deg, t2_deg, t3_deg):
-        # Konversi derajat ke radian
-        t1 = np.radians(t1_deg)
-        t2 = np.radians(t2_deg)
-        t3 = np.radians(t3_deg)
-        
-        # Titik 0: Base
+        t1, t2, t3 = np.radians(t1_deg), np.radians(t2_deg), np.radians(t3_deg)
         x = [0]
         y = [0]
-        
-        # Titik 1: Joint 1 (L1 * cos(t1))
         x.append(self.L[0] * np.cos(t1))
         y.append(self.L[0] * np.sin(t1))
-        
-        # Titik 2: Joint 2 (x1 + L2 * cos(t1+t2))
         x.append(x[1] + self.L[1] * np.cos(t1 + t2))
         y.append(y[1] + self.L[1] * np.sin(t1 + t2))
-        
-        # Titik 3: End-Effector (x2 + L3 * cos(t1+t2+t3))
         x.append(x[2] + self.L[2] * np.cos(t1 + t2 + t3))
         y.append(y[2] + self.L[2] * np.sin(t1 + t2 + t3))
-        
         return x, y
 
 # ==========================================================
-# 2. SETUP VISUALISASI DENGAN KONTROL MANUAL
+# 2. SETUP ANIMASI OTOMATIS & GENERATE GIF
 # ==========================================================
-def run_fk_manual():
+def run_fk_animation():
     robot = ForwardKinematics3DOF(8, 6, 4)
     
     plt.style.use('dark_background')
-    fig, ax = plt.subplots(figsize=(8, 8))
-    plt.subplots_adjust(bottom=0.25) # Ruang untuk slider
-    
+    fig, ax = plt.subplots(figsize=(10, 10))
     ax.set_xlim(-20, 20); ax.set_ylim(-20, 20)
     ax.set_aspect('equal')
     ax.grid(color='#333333', linestyle='--', alpha=0.5)
     
-    line, = ax.plot([], [], 'o-', lw=6, color='#00FFCC', mec='white', mew=1)
-    txt_info = ax.text(-19, 18, '', color='yellow', family='monospace')
+    line, = ax.plot([], [], 'o-', lw=6, color='#00FFCC', mec='white', mew=1, zorder=5)
+    trail, = ax.plot([], [], color='yellow', lw=1.5, alpha=0.6, label='Trajectory')
+    txt_info = ax.text(-19, 18, '', color='cyan', family='monospace', 
+                         bbox=dict(facecolor='black', alpha=0.7, edgecolor='cyan'))
 
-    # Tambahkan Slider untuk kontrol sudut manual
-    ax_t1 = plt.axes([0.2, 0.15, 0.65, 0.03])
-    ax_t2 = plt.axes([0.2, 0.10, 0.65, 0.03])
-    ax_t3 = plt.axes([0.2, 0.05, 0.65, 0.03])
+    hx, hy = [], [] # Untuk menyimpan jejak (trail)
 
-    s_t1 = Slider(ax_t1, 'Joint 1', -180.0, 180.0, valinit=45)
-    s_t2 = Slider(ax_t2, 'Joint 2', -180.0, 180.0, valinit=45)
-    s_t3 = Slider(ax_t3, 'Joint 3', -180.0, 180.0, valinit=0)
-
-    def update(val):
-        t1, t2, t3 = s_t1.val, s_t2.val, s_t3.val
+    def update(frame):
+        # Membuat variasi sudut otomatis berdasarkan frame
+        t1 = 45 * np.sin(0.05 * frame)
+        t2 = 60 * np.cos(0.05 * frame)
+        t3 = 30 * np.sin(0.1 * frame)
+        
         xs, ys = robot.calculate(t1, t2, t3)
+        
+        # Simpan jejak posisi End-Effector
+        hx.append(xs[-1])
+        hy.append(ys[-1])
+        
         line.set_data(xs, ys)
+        trail.set_data(hx[-100:], hy[-100:]) # Tampilkan 100 titik terakhir
         
         txt_info.set_text(
-            f"FORWARD KINEMATICS MODE\n"
-            f"-----------------------\n"
-            f"End-Effector Pos:\n"
-            f"X: {xs[-1]:.2f}\n"
-            f"Y: {ys[-1]:.2f}"
+            f"--- FORWARD KINEMATICS AUTO ---\n"
+            f"SISTRA AMANDA SINAGA\n"
+            f"JOINT 1: {t1:>6.1f}°\n"
+            f"JOINT 2: {t2:>6.1f}°\n"
+            f"JOINT 3: {t3:>6.1f}°\n"
+            f"-------------------------------\n"
+            f"EE POS : [{xs[-1]:.2f}, {ys[-1]:.2f}]"
         )
-        fig.canvas.draw_idle()
+        return line, trail, txt_info
 
-    s_t1.on_changed(update)
-    s_t2.on_changed(update)
-    s_t3.on_changed(update)
+    ani = FuncAnimation(fig, update, frames=200, interval=30, blit=True)
 
-    update(0) # Inisialisasi tampilan pertama
-    plt.title("MANUAL CONTROL: FORWARD KINEMATICS 3-DOF", pad=30)
+    # Simpan sebagai GIF
+    print("Sisca, sedang merekam animasi Forward Kinematics... Mohon tunggu.")
+    ani.save('fk_auto_animation.gif', writer='pillow', fps=30)
+    print("Selesai! File 'fk_auto_animation.gif' sudah ada di folder kamu.")
+
+    plt.title("ANIMATED: FORWARD KINEMATICS 3-DOF", color='cyan', pad=20)
     plt.show()
 
 if __name__ == "__main__":
-    run_fk_manual()
+    run_fk_animation()
