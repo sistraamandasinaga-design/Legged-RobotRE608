@@ -14,9 +14,8 @@
 
 ---
 
-<a name="bahasa-indonesia"></a>
 
-## 📖 Deskripsi Proyek (Bahasa Indonesia)
+## 📖 Deskripsi Proyek 
 
 Proyek ini merupakan simulasi pergerakan lengan robot planar dengan 3 derajat kebebasan (3-DOF). Simulasi ini dikembangkan menggunakan Python untuk memvisualisasikan dua konsep utama dalam robotika: **Forward Kinematics** dan **Inverse Kinematics**.
 
@@ -51,28 +50,6 @@ Menghitung sudut yang diperlukan ($\theta_1, \theta_2, \theta_3$) untuk mencapai
 3. Hitung $\theta_1$ menggunakan fungsi `atan2`.
 4. Hitung $\theta_3$ berdasarkan orientasi akhir yang diinginkan ($\phi$).
 
-### 🎥 Demo & Animasi (Bahasa Indonesia)
-
-#### 1. Forward Kinematics (Eksplorasi Workspace)
-![Forward Kinematics](WEEK%202/fk_auto_animation.gif)
-
-#### 2. Inverse Kinematics (Mengejar Target)
-Robot menghitung solusi sudut secara *real-time* untuk mengikuti koordinat target tertentu.
-![Inverse Kinematics](WEEK%202/simulation_3dof.gif)
-
----
-
-### 🎥 Demos & Animations (English)
-
-#### 1. Forward Kinematics - Auto Movement
-![Forward Kinematics](WEEK%202/fk_auto_animation.gif)
-
-#### 2. Inverse Kinematics - Trajectory Tracking
-The robot arm calculates joint angles in real-time to follow a predefined trajectory.
-![Inverse Kinematics](WEEK%202/simulation_3dof.gif)
-
-
-
 ---
 
 ## 🤖 Konfigurasi Robot
@@ -85,9 +62,9 @@ The robot arm calculates joint angles in real-time to follow a predefined trajec
 
 ---
 
-## 📂 Struktur Folder
-WEEK 2/
-├── 📄 Forward_Kinematics.py     # Simulasi Gerak Otomatis
-├── 📄 Inverse_Kinematics.py     # Simulasi Ikuti Lintasan (IK)
-├── 🖼️ forward_animation.gif     # Rekaman Hasil FK
-└── 🖼️ kinematik_simulation_3dof.gif       # Rekaman Hasil IK
+📂 githublengan/
+└── 📂 WEEK 2/
+    ├── 📄 Forward_Kinematics.py          # Simulasi Gerak Otomatis (FK)
+    ├── 📄 Inverse_Kinematics.py          # Simulasi Mengikuti Lintasan (IK)
+    ├── 🖼️ forward_auto_animation.gif     # Demo Visual: Forward Kinematics
+    └── 🖼️ inverse_simulation_3dof.gif     # Demo Visual: Inverse Kinematics
