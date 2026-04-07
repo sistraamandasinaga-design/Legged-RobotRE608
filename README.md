@@ -1,12 +1,13 @@
 <div align="center">
 
-# 🤖 3-DOF Planar Robot Kinematics Simulation
+# 🤖 3-Link Planar Robot Kinematics Simulation
+### (Forward & Inverse Kinematics)
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Active-success.svg)](https://github.com/sistraamandasinaga-design/Legged-RobotRE608)
+[![Course](https://img.shields.io/badge/Course-Legged_Robot-red.svg)](https://www.polibatam.ac.id/)
+[![Status](https://img.shields.io/badge/Status-Completed-success.svg)]()
 
-**Author: SISTRA AMANDA SINAGA** *Robotika Polibatam | Semester 6 - Legged Robot Course*
+**Author: SISTRA AMANDA SINAGA** *Robotika Polibatam | Semester 6 - Legged Robot Course (RE608)*
 
 [English](#english) | [Bahasa Indonesia](#bahasa-indonesia)
 
@@ -16,55 +17,53 @@
 
 <a name="english"></a>
 
-## 📖 English Version
+## 📖 Project Overview
+This repository contains a comprehensive simulation of a **3-Link Planar Robot Arm**. The project focuses on solving the fundamental robotics problem: finding the relationship between joint angles and the end-effector's position in 2D space.
 
-### 🔍 Overview
-This project provides a robust simulation environment for a **3-Degree of Freedom (3-DOF) Planar Robot Arm**. It includes interactive manual controls and automated trajectory tracking using high-level kinematics algorithms.
-
-### ✨ Key Features
-- **Forward Kinematics (FK)**: Real-time calculation of end-effector position from joint angles.
-- **Inverse Kinematics (IK)**: Geometric solution to determine joint angles from target coordinates $(X, Y)$ and orientation $(\phi)$.
-- **Interactive Manual Control**: Live manipulation using Matplotlib Sliders.
-- **Automated Trajectory Tracking**: Animated simulation of the robot following predefined path points.
-- **Dynamic Dashboard**: Real-time status display of motor angles and coordinates.
-
-### 📐 Robot Configuration
-| Link | Length | Description |
-|------|--------|-------------|
-| Link 1 | 8.0 units | Shoulder (Bahu) |
-| Link 2 | 6.0 units | Elbow (Siku) |
-| Link 3 | 4.0 units | Wrist (Pergelangan) |
+### 🎯 Objectives (Based on Assignment)
+According to the course requirements:
+1. **Forward Kinematics**: Calculate the $(X, Y)$ position of the end-effector based on given joint angles ($\theta_1, \theta_2, \theta_3$).
+2. **Inverse Kinematics**: Determine the required joint angles to reach a specific target position $(X_{target}, Y_{target})$.
 
 ---
 
 <a name="bahasa-indonesia"></a>
 
-## 📖 Versi Bahasa Indonesia
+## 📖 Dokumentasi Bahasa Indonesia
 
-### 🔍 Ringkasan
-Proyek ini menyediakan lingkungan simulasi untuk **Lengan Robot Planar 3-DOF**. Program ini mencakup kontrol manual interaktif dan pelacakan lintasan otomatis menggunakan algoritma kinematika tingkat lanjut.
+### 📐 Dasar Matematika & Rumus
 
-### ✨ Fitur Utama
-- **Forward Kinematics (FK)**: Perhitungan posisi *end-effector* secara real-time berdasarkan sudut joint.
-- **Inverse Kinematics (IK)**: Solusi geometris untuk menentukan sudut joint dari koordinat target $(X, Y)$ dan orientasi $(\phi)$.
-- **Kontrol Manual Interaktif**: Manipulasi langsung menggunakan *Slider* Matplotlib.
-- **Pelacakan Lintasan Otomatis**: Simulasi animasi robot mengikuti titik-titik jalur yang telah ditentukan.
-- **Dashboard Dinamis**: Tampilan status real-time untuk sudut motor dan koordinat posisi.
+Berdasarkan struktur robot 3-link planar, berikut adalah formulasi yang digunakan dalam kode ini:
 
-### 🔬 Detail Matematika
+#### 1. Forward Kinematics (FK)
+Menghitung posisi ujung robot (End-Effector) jika sudut setiap motor diketahui:
 
-#### Forward Kinematics
-Diberikan sudut $\theta_1, \theta_2, \theta_3$, posisi akhir dihitung sebagai:
-- $x = L_1\cos(\theta_1) + L_2\cos(\theta_1+\theta_2) + L_3\cos(\theta_1+\theta_2+\theta_3)$
-- $y = L_1\sin(\theta_1) + L_2\sin(\theta_1+\theta_2) + L_3\sin(\theta_1+\theta_2+\theta_3)$
+$$x = L_1 \cos(\theta_1) + L_2 \cos(\theta_1 + \theta_2) + L_3 \cos(\theta_1 + \theta_2 + \theta_3)$$
+$$y = L_1 \sin(\theta_1) + L_2 \sin(\theta_1 + \theta_2) + L_3 \sin(\theta_1 + \theta_2 + \theta_3)$$
 
+#### 2. Inverse Kinematics (IK)
+Menghitung sudut motor yang dibutuhkan untuk mencapai koordinat target $(x, y)$.
+- **Langkah 1**: Tentukan posisi pergelangan (*Wrist*) $(x_w, y_w)$ dengan orientasi $\phi$.
+  $$x_w = x - L_3 \cos(\phi)$$
+  $$y_w = y - L_3 \sin(\phi)$$
+- **Langkah 2**: Gunakan hukum kosinus untuk mencari $\theta_2$ (Siku).
+  $$\cos(\theta_2) = \frac{x_w^2 + y_w^2 - L_1^2 - L_2^2}{2 L_1 L_2}$$
+- **Langkah 3**: Hitung $\theta_1$ (Bahu) dan $\theta_3$ (Wrist) menggunakan fungsi `atan2`.
 
+---
 
-#### Inverse Kinematics
-Menggunakan metode geometris untuk mencari posisi *Wrist* terlebih dahulu, kemudian menyelesaikan sudut $\theta_1$ dan $\theta_2$ menggunakan hukum cosinus.
+### 🤖 Konfigurasi Simulasi
+Robot ini dikonfigurasi dengan panjang link sebagai berikut:
+- **Link 1 (Bahu)**: 8.0 unit
+- **Link 2 (Siku)**: 6.0 unit
+- **Link 3 (Wrist)**: 4.0 unit
 
-### 💻 Cara Penggunaan
+---
 
-1. **Install Dependensi**:
-   ```bash
-   pip install numpy matplotlib
+### 💻 Cara Mengerjakan & Menjalankan
+Proyek ini dibagi menjadi dua modul utama agar mudah dipelajari:
+
+#### A. Menjalankan Forward Kinematics (Kontrol Manual)
+Gunakan file ini untuk menggerakkan robot secara manual menggunakan slider.
+```bash
+python "WEEK 2/Forward_Kinematics.py"
