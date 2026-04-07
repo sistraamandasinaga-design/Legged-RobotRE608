@@ -22,12 +22,10 @@ Proyek ini merupakan simulasi pergerakan lengan robot planar dengan 3 derajat ke
 
 ### 🎥 Demo & Animasi
 
-#### 1. Forward Kinematics (Eksplorasi Otomatis)
-Robot bergerak secara mandiri dengan memvariasikan sudut pada setiap joint untuk menunjukkan jangkauan kerja (*workspace*).
+#### 1. Forward Kinematics - Auto Movement
 ![Forward Kinematics](WEEK%202/fk_auto_animation.gif)
 
-#### 2. Inverse Kinematics (Mengikuti Lintasan)
-Robot menghitung sudut yang diperlukan secara *real-time* untuk mengikuti koordinat target yang membentuk lintasan tertentu.
+#### 2. Inverse Kinematics - Trajectory Tracking
 ![Inverse Kinematics](WEEK%202/simulation_3dof.gif)
 
 ---
