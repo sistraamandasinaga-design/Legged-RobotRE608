@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🤖 3-Link Planar Robot Kinematics Simulation
-### SISTRA AMANDA SINAGA (2243411xxx)
+### SISTRA AMANDA SINAGA (222301011)
 **Program Studi Teknik Robotika - Politeknik Negeri Batam**
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
