@@ -1,269 +1,361 @@
 # 🦾 Inverse Kinematics Planar Robot 3-DOF
+
 ### Pendekatan Machine Learning & Deep Learning
 
-> **Nama:** Sistra Amanda Sinaga  
-> **NIM:** 42223O1O11  
+> **Nama:** Sistra Amanda Sinaga
+> **NIM:** 42223O1O11
 > **Mata Kuliah:** Praktikum Kinematika dan Kontrol Robot — IK ML / DL
 
 ---
 
-## 📌 Deskripsi Proyek
+# 📌 Deskripsi Proyek
 
-Repositori ini berisi implementasi penyelesaian masalah **Inverse Kinematics (IK)** pada robot planar 3-DOF (*Degree of Freedom*) menggunakan pendekatan **Machine Learning (Supervised)** dan **Deep Learning (PyTorch MLP)**. Proyek ini dikembangkan untuk memenuhi tugas praktikum dengan pembaruan dimensi robot dan optimasi metode prediksi sudut sendi.
+Repositori ini berisi implementasi penyelesaian masalah **Inverse Kinematics (IK)** pada robot planar **3 Degrees of Freedom (3-DOF)** menggunakan pendekatan **Machine Learning (ML)** dan **Deep Learning (DL)**.
 
-### Apa itu Inverse Kinematics?
+Tujuan utama proyek ini adalah mempelajari bagaimana model pembelajaran mesin dapat memprediksi sudut sendi robot berdasarkan posisi target end-effector secara cepat dan akurat tanpa menyelesaikan persamaan IK secara analitik setiap saat.
 
-| | Forward Kinematics (FK) | Inverse Kinematics (IK) |
-|---|---|---|
-| **Input** | Sudut sendi `[θ1, θ2, θ3]` | Posisi target `(x, y)` |
-| **Output** | Posisi end-effector `(x, y)` | Sudut sendi `[θ1, θ2, θ3]` |
-| **Sifat** | Mudah ✅, solusi unik | Sulit ⚠️, solusi bisa banyak |
+---
 
-### Persamaan Forward Kinematics:
+# 🔍 Apa itu Inverse Kinematics?
+
+| Aspek             | Forward Kinematics (FK) | Inverse Kinematics (IK) |
+| ----------------- | ----------------------- | ----------------------- |
+| Input             | θ₁, θ₂, θ₃              | x, y                    |
+| Output            | x, y                    | θ₁, θ₂, θ₃              |
+| Tingkat Kesulitan | Mudah                   | Lebih Sulit             |
+| Jumlah Solusi     | Umumnya unik            | Bisa banyak solusi      |
+
+### Persamaan Forward Kinematics
+
+```math
+x = L1 cos(θ1) + L2 cos(θ1+θ2) + L3 cos(θ1+θ2+θ3)
 ```
-x = L1·cos(θ1) + L2·cos(θ1+θ2) + L3·cos(θ1+θ2+θ3)
-y = L1·sin(θ1) + L2·sin(θ1+θ2) + L3·sin(θ1+θ2+θ3)
+
+```math
+y = L1 sin(θ1) + L2 sin(θ1+θ2) + L3 sin(θ1+θ2+θ3)
 ```
 
 ---
 
-## 🤖 Spesifikasi Robot
+# 🤖 Spesifikasi Robot
 
-```
-Base (0,0) ──── Link 1 ──── Link 2 ──── Link 3 ──── End-Effector
-               L1 = 0.5m   L2 = 0.4m   L3 = 0.3m
-```
+| Parameter          | Nilai       |
+| ------------------ | ----------- |
+| Link 1 (L1)        | 0.5 m       |
+| Link 2 (L2)        | 0.4 m       |
+| Link 3 (L3)        | 0.3 m       |
+| Total DOF          | 3           |
+| Batas Sudut        | -π hingga π |
+| Jangkauan Maksimum | 1.2 m       |
 
-| Parameter | Nilai |
-|-----------|-------|
-| Panjang Link 1 (`L1`) | `0.5 m` |
-| Panjang Link 2 (`L2`) | `0.4 m` |
-| Panjang Link 3 (`L3`) | `0.3 m` |
-| Jumlah DOF | `3` |
-| Batas Sudut per Sendi | `±π rad` |
-| Jangkauan Maksimum (`MAX_REACH`) | `1.2 m` |
+```text
+Base ── Link1 ── Link2 ── Link3 ── End-Effector
+        0.5 m     0.4 m     0.3 m
+```
 
 ---
 
-## 🛠 Instalasi & Dependensi
+# 🛠️ Instalasi
+
+Install seluruh library yang diperlukan:
 
 ```bash
-pip install gymnasium stable-baselines3 scikit-learn torch matplotlib numpy tqdm pandas
+pip install gymnasium stable-baselines3 scikit-learn torch matplotlib numpy pandas tqdm
 ```
 
-| Library | Fungsi |
-|---------|--------|
-| `numpy` | Komputasi numerik & operasi matriks |
-| `matplotlib` | Visualisasi dan animasi robot |
-| `scikit-learn` | Model ML (Extra Trees, Ridge, MLP) |
-| `torch` (PyTorch) | Deep Learning — IKNet |
-| `gymnasium` | Environment untuk RL (PPO) |
-| `stable-baselines3` | Algoritma RL |
+---
+
+# 📚 Library yang Digunakan
+
+| Library           | Fungsi                     |
+| ----------------- | -------------------------- |
+| NumPy             | Operasi numerik            |
+| Matplotlib        | Visualisasi                |
+| Scikit-Learn      | Machine Learning           |
+| PyTorch           | Deep Learning              |
+| Pandas            | Pengolahan Data            |
+| Gymnasium         | Environment RL             |
+| Stable-Baselines3 | PPO Reinforcement Learning |
 
 ---
 
-## 🗺️ Workspace & Geometri Robot
+# 🗺️ Workspace & Geometri Robot
 
-Setelah dimensi link diperbarui, ruang kerja robot melebar menjadi radius lingkaran maksimal **1.2 meter**. Fungsi keselamatan dinamis disematkan untuk membedakan area reachable dan unreachable sebelum prediksi dilakukan.
+Setelah dimensi link diperbarui, robot memiliki jangkauan maksimum sebesar **1.2 meter**. Area kerja robot diperoleh menggunakan sampling Forward Kinematics sebanyak 18.000 data.
 
-<p align="center">
-  <img src="image/Workspace Robot Planar 3-DOF.png" width="31%" alt="Workspace Robot">
-  <img src="image/Fungsi Reachability Check.png" width="31%" alt="Reachability Check">
-  <img src="image/Demo Visualisasi Robot.png" width="31%" alt="Demo Visualisasi Robot">
-</p>
-<p align="center"><em>Gambar 1: Analisis Geometri Robot — (Kiri) Workspace 18.000 titik FK sampling, (Tengah) Validasi Reachability Check, (Kanan) Tiga Konfigurasi Postur Lengan Robot</em></p>
+## Workspace Robot
+
+![Workspace Robot](images/workspace_robot_3dof.png)
+
+**Gambar 1.** Workspace robot planar 3-DOF hasil sampling 18.000 data.
 
 ---
 
-## 📊 Dataset
+## Reachability Check
 
-Dataset dibuat menggunakan **FK Sampling** — menghasilkan pasangan `(θ, end-effector)` secara acak:
+![Reachability Check](images/Fungsi Reachability Check.png)
+
+**Gambar 2.** Pemeriksaan apakah target masih berada dalam area jangkauan robot.
+
+---
+
+## Demo Visualisasi Robot
+
+![Demo Robot](images/Demo Visualisasi Robot.png)
+
+**Gambar 3.** Visualisasi konfigurasi robot planar 3-DOF.
+
+---
+
+# 📊 Dataset
+
+Dataset dibuat menggunakan metode **Forward Kinematics Sampling**.
 
 ```python
-N = 18.000 sampel
-theta  ~ Uniform(-π, π)    # Random sampling sudut sendi
-ee_pos = FK(theta)          # Hitung posisi via Forward Kinematics
+N = 18000
+
+theta ~ Uniform(-π, π)
+
+ee_pos = FK(theta)
 ```
 
-| Properti | Nilai |
-|----------|-------|
-| Total sampel | 18.000 |
-| Input model (`X`) | Posisi end-effector `(x, y)` |
-| Output model (`y`) | Sudut sendi `(θ1, θ2, θ3)` |
-| Split Train / Test | 80% / 20% → 14.400 / 3.600 |
-| Preprocessing | `StandardScaler` (normalisasi input) |
+| Properti      | Nilai                |
+| ------------- | -------------------- |
+| Jumlah Sampel | 18.000               |
+| Input         | (x, y)               |
+| Output        | (θ1, θ2, θ3)         |
+| Split Data    | 80% Train / 20% Test |
+| Train Data    | 14.400               |
+| Test Data     | 3.600                |
+| Normalisasi   | StandardScaler       |
 
 ---
 
-## 🤖 Metode yang Digunakan
+# 🤖 Metode Machine Learning
 
-### 1. Machine Learning (Supervised)
+Tiga metode Machine Learning digunakan sebagai pembanding.
 
-Tiga metode ML dilatih dan dibandingkan menggunakan data yang sama:
+## 1. Extra Trees Regressor
 
-| No | Metode | Cara Kerja Singkat |
-|----|--------|--------------------|
-| 1 | **Extra Trees** | Ensemble pohon keputusan acak, split dipilih secara random — lebih cepat & robust dari RF |
-| 2 | **Ridge Regression** | Regresi linear + regularisasi L2 — baseline paling cepat, interpretable |
-| 3 | **MLP Regressor (sklearn)** | Neural network ringan bawaan sklearn — tanpa GPU, cocok pembanding DL |
+Kelebihan:
+
+* Cepat
+* Robust terhadap noise
+* Cocok untuk data non-linear
 
 ```python
-# Extra Trees
-ExtraTreesRegressor(n_estimators=150, max_features='sqrt', n_jobs=-1)
-
-# Ridge Regression
-MultiOutputRegressor(Ridge(alpha=1.0), n_jobs=-1)
-
-# MLP Regressor
-MLPRegressor(hidden_layer_sizes=(256,256), activation='relu', solver='adam',
-             max_iter=300, early_stopping=True)
+ExtraTreesRegressor(
+    n_estimators=150,
+    max_features='sqrt',
+    n_jobs=-1
+)
 ```
 
 ---
 
-### 2. Deep Learning — IKNet (PyTorch)
+## 2. Ridge Regression
 
-Model kustom yang dioptimasi langsung di **ruang end-effector (Cartesian)**. Loss dihitung sebagai jarak antara posisi prediksi dan target, bukan di ruang sudut.
+Kelebihan:
 
-#### Arsitektur IKNet
+* Sangat cepat
+* Sederhana
+* Mudah diinterpretasikan
 
-```
-Input (2,) ── x, y posisi target
-
-Linear(2→256) + BatchNorm1d + ReLU
-Linear(256→512) + BatchNorm1d + ReLU + Dropout(0.1)
-Linear(512→512) + BatchNorm1d + ReLU + Dropout(0.1)
-Linear(512→256) + BatchNorm1d + ReLU
-Linear(256→3)
-
-Output: tanh(out) × π  →  θ ∈ [-π, π]
+```python
+Ridge(alpha=1.0)
 ```
 
-| Konfigurasi | Nilai |
-|-------------|-------|
-| Optimizer | Adam (`lr=1e-3`, `weight_decay=1e-5`) |
-| Scheduler | CosineAnnealingLR (`T_max=100`) |
-| Loss Function | MSELoss di ruang **Cartesian** (bukan sudut) |
-| Epochs | 100 |
-| Batch Size | 512 |
+---
 
-> **Kenapa loss di ruang Cartesian?**  
-> IK bersifat redundant — banyak kombinasi sudut yang valid untuk satu posisi target. Loss di ruang sudut membingungkan model. Loss di Cartesian memastikan model dievaluasi berdasarkan **akurasi fisis** seberapa dekat robot ke target.
+## 3. MLP Regressor
 
-#### Kurva Training
+Neural Network bawaan Scikit-Learn.
 
-<p align="center">
-  <img src="image/Training Curve — Deep Learning (IKNet).png" width="70%" alt="Training Curve IKNet">
-</p>
-<p align="center"><em>Gambar 2: Kurva Penurunan MSE Loss — Train vs Validation selama 100 epoch (skala log)</em></p>
+```python
+MLPRegressor(
+    hidden_layer_sizes=(256,256),
+    activation='relu',
+    solver='adam'
+)
+```
 
 ---
 
-## 📈 Hasil Evaluasi & Perbandingan
+# 🧠 Deep Learning — IKNet (PyTorch)
 
-### Error Distribusi — Metode ML
+Model Deep Learning dirancang khusus untuk memprediksi sudut sendi robot.
 
-<p align="center">
-  <img src="image/Perbandingan Error End-Effector — Metode ML Baru.png" width="90%" alt="Error ML">
-</p>
-<p align="center"><em>Gambar 3: Distribusi Error End-Effector per Metode ML — Histogram Frekuensi dengan Garis Mean (merah)</em></p>
+## Arsitektur
 
-### Perbandingan Akurasi Semua Metode
+```text
+Input (x,y)
 
-<p align="center">
-  <img src="image/Perbandingan Akurasi IK Baru — ML vs DL.png" width="65%" alt="Bar Chart Perbandingan">
-</p>
-<p align="center"><em>Gambar 4: Bar Chart Perbandingan Mean Error End-Effector (cm) — ML vs Deep Learning</em></p>
+↓ Linear 2 → 256
+↓ BatchNorm
+↓ ReLU
 
-### Distribusi Error — Semua Metode
+↓ Linear 256 → 512
+↓ BatchNorm
+↓ ReLU
+↓ Dropout
 
-<p align="center">
-  <img src="image/Analisis Distribusi Error End-Effector — Semua Metode Baru.png" width="85%" alt="Histogram Semua Metode">
-</p>
-<p align="center"><em>Gambar 5: Analisis Distribusi Error End-Effector — Perbandingan Lengkap Semua Metode (Extra Trees, Ridge, MLP, IKNet DL)</em></p>
+↓ Linear 512 → 512
+↓ BatchNorm
+↓ ReLU
+↓ Dropout
 
----
+↓ Linear 512 → 256
+↓ BatchNorm
+↓ ReLU
 
-## 🏆 Ringkasan Hasil
+↓ Linear 256 → 3
 
-| Metode | Kategori | Butuh Dataset | Kelebihan Utama |
-|--------|----------|---------------|-----------------|
-| **Extra Trees** | ML | ✅ Ya | Robust, ensemble, cepat training |
-| **Ridge Regression** | ML | ✅ Ya | Training tercepat, interpretable |
-| **MLP Regressor** | ML | ✅ Ya | Neural network tanpa GPU |
-| **IKNet (PyTorch DL)** | DL | ✅ Ya | Akurasi fisis tertinggi |
-| **PPO (RL)** | RL | ❌ Tidak | Adaptif, tanpa dataset |
-
-### Rekomendasi Pemilihan Metode
-
-| Kondisi | Rekomendasi |
-|---------|-------------|
-| Training paling cepat, data besar | **Ridge Regression** |
-| Akurasi ML terbaik, robust | **Extra Trees** |
-| Neural network tanpa GPU | **MLP Regressor (sklearn)** |
-| Akurasi fisis tertinggi | **Deep Learning (IKNet PyTorch)** |
-| Tidak ada dataset, perlu hindari rintangan | **RL (PPO)** |
-| Real-time pada hardware rendah | **Extra Trees / Ridge** |
+Output = θ1 θ2 θ3
+```
 
 ---
 
-## 💬 Diskusi
+## Konfigurasi Training
 
-**1. Mengapa Deep Learning lebih akurat dari ML tradisional?**  
-DL secara otomatis mempelajari representasi fitur berlapis. Hubungan IK melibatkan fungsi trigonometri non-linear (sin/cos) yang sulit ditangkap KNN atau Ridge. IKNet juga dioptimasi langsung di ruang Cartesian (physical loss).
-
-**2. Mengapa waktu training RL meningkat saat workspace diperbesar?**  
-RL belajar melalui eksplorasi. Workspace lebih besar = state space lebih besar, reward lebih jarang (*sparse reward*), sehingga konvergensi lebih lama.
-
-**3. Apa kelemahan Supervised Learning untuk konfigurasi baru?**  
-Model bersifat statis setelah training. Kondisi *Out-of-Distribution (OOD)* — seperti panjang link berubah — menyebabkan prediksi tidak akurat. Diperlukan retraining dengan data baru.
-
-**4. Mengapa SVR bisa lebih baik dari Random Forest di workspace besar?**  
-SVR dengan kernel RBF mampu generalisasi lebih baik ke area yang jarang tercakup data training (ekstrapolasi). Random Forest kuat untuk interpolasi tetapi kurang untuk ekstrapolasi.
+| Parameter     | Nilai             |
+| ------------- | ----------------- |
+| Optimizer     | Adam              |
+| Learning Rate | 0.001             |
+| Scheduler     | CosineAnnealingLR |
+| Epoch         | 100               |
+| Batch Size    | 512               |
+| Weight Decay  | 1e-5              |
 
 ---
 
-## ▶️ Cara Menjalankan
+## Mengapa Loss Cartesian?
+
+Karena satu posisi target dapat memiliki lebih dari satu konfigurasi sudut.
+
+Jika loss dihitung pada sudut:
+
+```text
+Prediksi Sudut ≠ Sudut Asli
+```
+
+padahal posisi end-effector bisa sama.
+
+Oleh karena itu digunakan:
+
+```text
+Loss = Error Posisi End-Effector
+```
+
+yang lebih merepresentasikan performa fisik robot.
+
+---
+
+# 📈 Hasil Evaluasi
+
+## Training Curve IKNet
+
+![Training Curve](images/Training Curve — Deep Learning (IKNet).png)
+
+**Gambar 4.** Kurva training dan validation loss selama 100 epoch.
+
+---
+
+## Perbandingan Error Machine Learning
+
+![Error ML](images/Perbandingan Error End-Effector — Metode ML Baru.png)
+
+**Gambar 5.** Distribusi error end-effector metode Machine Learning.
+
+---
+
+## Perbandingan Akurasi ML vs DL
+
+![ML vs DL](images/Perbandingan Akurasi IK Baru — ML vs DL.png)
+
+**Gambar 6.** Perbandingan rata-rata error seluruh metode.
+
+---
+
+## Distribusi Error Semua Metode
+
+![All Methods](images/Analisis Distribusi Error End-Effector — Semua Metode Baru.png)
+
+**Gambar 7.** Analisis distribusi error seluruh metode.
+
+---
+
+# 🏆 Ringkasan Hasil
+
+| Metode           | Kategori | Dataset | Kelebihan                |
+| ---------------- | -------- | ------- | ------------------------ |
+| Ridge Regression | ML       | Ya      | Training tercepat        |
+| Extra Trees      | ML       | Ya      | Robust dan stabil        |
+| MLP Regressor    | ML       | Ya      | Neural Network ringan    |
+| IKNet            | DL       | Ya      | Akurasi tertinggi        |
+| PPO              | RL       | Tidak   | Tidak memerlukan dataset |
+
+---
+
+# 🎯 Rekomendasi
+
+| Kebutuhan             | Metode              |
+| --------------------- | ------------------- |
+| Training tercepat     | Ridge               |
+| Akurasi ML terbaik    | Extra Trees         |
+| Neural Network ringan | MLP                 |
+| Akurasi terbaik       | IKNet               |
+| Tanpa dataset         | PPO                 |
+| Hardware rendah       | Ridge / Extra Trees |
+
+---
+
+# ▶️ Cara Menjalankan
 
 ```bash
-# Install semua dependensi
-pip install gymnasium stable-baselines3 scikit-learn torch matplotlib numpy tqdm pandas
-
-# Jalankan notebook
-jupyter notebook Assignment_IK_ML__DL__RL.ipynb
+pip install gymnasium stable-baselines3 scikit-learn torch matplotlib numpy pandas tqdm
 ```
 
-**Urutan eksekusi sel yang benar:**
-1. Install & Import Library
-2. Konfigurasi Robot (L1, L2, L3)
-3. Generate Dataset (FK Sampling — 18.000 sampel)
-4. Split Train/Test (80/20)
-5. Training ML (Extra Trees → Ridge → MLP)
-6. Training DL (IKNet PyTorch — 100 epoch)
-7. Evaluasi & Perbandingan Semua Metode
-8. Visualisasi & Animasi Robot
+Jalankan notebook:
 
-> ⚠️ Jalankan sel secara berurutan. Sel perbandingan bergantung pada variabel dari sel sebelumnya (`ml_results`, `dl_err`).
+```bash
+jupyter notebook "Assignment IK ML, DL, RL.ipynb"
+```
+
+Urutan eksekusi:
+
+1. Import Library
+2. Konfigurasi Robot
+3. Generate Dataset
+4. Split Dataset
+5. Training ML
+6. Training DL
+7. Evaluasi
+8. Visualisasi
 
 ---
 
-## 📁 Struktur Repositori
+# 📁 Struktur Repository
 
-```
-📦 Assignment_IK_ML__DL__RL
- ┣ 📓 Assignment_IK_ML__DL__RL.ipynb   ← Notebook utama
- ┣ 📂 image/
- ┃ ┣ 🖼️ Workspace Robot Planar 3-DOF.png
- ┃ ┣ 🖼️ Fungsi Reachability Check.png
- ┃ ┣ 🖼️ Demo Visualisasi Robot.png
- ┃ ┣ 🖼️ Training Curve — Deep Learning (IKNet).png
- ┃ ┣ 🖼️ Perbandingan Error End-Effector — Metode ML Baru.png
- ┃ ┣ 🖼️ Perbandingan Akurasi IK Baru — ML vs DL.png
- ┃ ┗ 🖼️ Analisis Distribusi Error End-Effector — Semua Metode Baru.png
- ┗ 📄 README.md
+```text
+📦 Assignment IK ML, DL, RL
+┣ 📓 Assignment IK ML, DL, RL.ipynb
+┣ 📂 images
+┃ ┣ 📷 workspace_robot_3dof.png
+┃ ┣ 📷 Demo Visualisasi Robot.png
+┃ ┣ 📷 Fungsi Reachability Check.png
+┃ ┣ 📷 Training Curve — Deep Learning (IKNet).png
+┃ ┣ 📷 Perbandingan Error End-Effector — Metode ML Baru.png
+┃ ┣ 📷 Perbandingan Akurasi IK Baru — ML vs DL.png
+┃ ┗ 📷 Analisis Distribusi Error End-Effector — Semua Metode Baru.png
+┣ 📄 README.md
 ```
 
 ---
 
-*Dibuat untuk Tugas Praktikum Inverse Kinematics — Pendekatan ML & DL pada Robot Planar 3-DOF*  
-*Nama: Sistra Amanda Sinaga | NIM: 42223O1O11*
+# 👩‍💻 Penulis
+
+**Sistra Amanda Sinaga**
+NIM: 42223O1O11
+
+Praktikum Kinematika dan Kontrol Robot
+Politeknik Negeri Batam
