@@ -12,7 +12,7 @@
 
 Repositori ini berisi implementasi penyelesaian masalah **Inverse Kinematics (IK)** pada robot planar **3 Degrees of Freedom (3-DOF)** menggunakan pendekatan **Machine Learning (ML)** dan **Deep Learning (DL)**.
 
-Tujuan utama proyek ini adalah mempelajari bagaimana model pembelajaran mesin dapat memprediksi sudut sendi robot berdasarkan posisi target end-effector secara cepat dan akurat tanpa menyelesaikan persamaan IK secara analitik setiap saat.
+Tujuan utama proyek ini adalah mempelajari bagaimana model pembelajaran mesin dapat memprediksi sudut sendi robot berdasarkan posisi target end-effector secara cepat dan akurat tanpa harus menyelesaikan persamaan inverse kinematics secara analitik setiap saat.
 
 ---
 
@@ -23,7 +23,7 @@ Tujuan utama proyek ini adalah mempelajari bagaimana model pembelajaran mesin da
 | Input             | θ₁, θ₂, θ₃              | x, y                    |
 | Output            | x, y                    | θ₁, θ₂, θ₃              |
 | Tingkat Kesulitan | Mudah                   | Lebih Sulit             |
-| Jumlah Solusi     | Umumnya unik            | Bisa banyak solusi      |
+| Jumlah Solusi     | Umumnya Unik            | Bisa Banyak Solusi      |
 
 ### Persamaan Forward Kinematics
 
@@ -57,8 +57,6 @@ Base ── Link1 ── Link2 ── Link3 ── End-Effector
 
 # 🛠️ Instalasi
 
-Install seluruh library yang diperlukan:
-
 ```bash
 pip install gymnasium stable-baselines3 scikit-learn torch matplotlib numpy pandas tqdm
 ```
@@ -81,7 +79,21 @@ pip install gymnasium stable-baselines3 scikit-learn torch matplotlib numpy pand
 
 # 🗺️ Workspace & Geometri Robot
 
-Setelah dimensi link diperbarui, robot memiliki jangkauan maksimum sebesar **1.2 meter**. Area kerja robot diperoleh menggunakan sampling Forward Kinematics sebanyak 18.000 data.
+Setelah dimensi link diperbarui menjadi:
+
+* L1 = 0.5 m
+* L2 = 0.4 m
+* L3 = 0.3 m
+
+Robot memiliki jangkauan maksimum:
+
+```math
+R_{max}=L1+L2+L3=1.2m
+```
+
+Area kerja robot diperoleh melalui sampling Forward Kinematics sebanyak **18.000 data**.
+
+---
 
 ## Workspace Robot
 
@@ -95,7 +107,7 @@ Setelah dimensi link diperbarui, robot memiliki jangkauan maksimum sebesar **1.2
 
 ![Reachability Check](images/Fungsi Reachability Check.png)
 
-**Gambar 2.** Pemeriksaan apakah target masih berada dalam area jangkauan robot.
+**Gambar 2.** Pemeriksaan apakah target berada dalam area jangkauan robot.
 
 ---
 
@@ -104,6 +116,18 @@ Setelah dimensi link diperbarui, robot memiliki jangkauan maksimum sebesar **1.2
 ![Demo Robot](images/Demo Visualisasi Robot.png)
 
 **Gambar 3.** Visualisasi konfigurasi robot planar 3-DOF.
+
+---
+
+# 🖼️ Galeri Visualisasi
+
+| Workspace                            | Reachability                              |
+| ------------------------------------ | ----------------------------------------- |
+| ![](images/workspace_robot_3dof.png) | ![](images/Fungsi Reachability Check.png) |
+
+| Visualisasi Robot                      |
+| -------------------------------------- |
+| ![](images/Demo Visualisasi Robot.png) |
 
 ---
 
@@ -119,21 +143,19 @@ theta ~ Uniform(-π, π)
 ee_pos = FK(theta)
 ```
 
-| Properti      | Nilai                |
-| ------------- | -------------------- |
-| Jumlah Sampel | 18.000               |
-| Input         | (x, y)               |
-| Output        | (θ1, θ2, θ3)         |
-| Split Data    | 80% Train / 20% Test |
-| Train Data    | 14.400               |
-| Test Data     | 3.600                |
-| Normalisasi   | StandardScaler       |
+| Properti      | Nilai          |
+| ------------- | -------------- |
+| Jumlah Sampel | 18.000         |
+| Input         | (x,y)          |
+| Output        | (θ1, θ2, θ3)   |
+| Split Data    | 80% / 20%      |
+| Data Train    | 14.400         |
+| Data Test     | 3.600          |
+| Normalisasi   | StandardScaler |
 
 ---
 
 # 🤖 Metode Machine Learning
-
-Tiga metode Machine Learning digunakan sebagai pembanding.
 
 ## 1. Extra Trees Regressor
 
@@ -141,12 +163,12 @@ Kelebihan:
 
 * Cepat
 * Robust terhadap noise
-* Cocok untuk data non-linear
+* Baik untuk data non-linear
 
 ```python
 ExtraTreesRegressor(
     n_estimators=150,
-    max_features='sqrt',
+    max_features="sqrt",
     n_jobs=-1
 )
 ```
@@ -157,8 +179,8 @@ ExtraTreesRegressor(
 
 Kelebihan:
 
-* Sangat cepat
-* Sederhana
+* Training tercepat
+* Ringan
 * Mudah diinterpretasikan
 
 ```python
@@ -174,8 +196,10 @@ Neural Network bawaan Scikit-Learn.
 ```python
 MLPRegressor(
     hidden_layer_sizes=(256,256),
-    activation='relu',
-    solver='adam'
+    activation="relu",
+    solver="adam",
+    max_iter=300,
+    early_stopping=True
 )
 ```
 
@@ -185,7 +209,7 @@ MLPRegressor(
 
 Model Deep Learning dirancang khusus untuk memprediksi sudut sendi robot.
 
-## Arsitektur
+## Arsitektur IKNet
 
 ```text
 Input (x,y)
@@ -230,23 +254,9 @@ Output = θ1 θ2 θ3
 
 ## Mengapa Loss Cartesian?
 
-Karena satu posisi target dapat memiliki lebih dari satu konfigurasi sudut.
+Karena satu posisi target dapat memiliki banyak kombinasi sudut yang valid.
 
-Jika loss dihitung pada sudut:
-
-```text
-Prediksi Sudut ≠ Sudut Asli
-```
-
-padahal posisi end-effector bisa sama.
-
-Oleh karena itu digunakan:
-
-```text
-Loss = Error Posisi End-Effector
-```
-
-yang lebih merepresentasikan performa fisik robot.
+Alih-alih menghitung error pada sudut, model dievaluasi langsung menggunakan error posisi end-effector sehingga performa yang diukur benar-benar merepresentasikan akurasi fisik robot.
 
 ---
 
@@ -254,7 +264,7 @@ yang lebih merepresentasikan performa fisik robot.
 
 ## Training Curve IKNet
 
-![Training Curve](images/Training Curve — Deep Learning (IKNet).png)
+![Training Curve](images/Training Curve Deep Learning (IKNet).png)
 
 **Gambar 4.** Kurva training dan validation loss selama 100 epoch.
 
@@ -262,15 +272,15 @@ yang lebih merepresentasikan performa fisik robot.
 
 ## Perbandingan Error Machine Learning
 
-![Error ML](images/Perbandingan Error End-Effector — Metode ML Baru.png)
+![Error ML](images/Perbandingan Error End-Effector Metode ML Baru.png)
 
-**Gambar 5.** Distribusi error end-effector metode Machine Learning.
+**Gambar 5.** Distribusi error metode Machine Learning.
 
 ---
 
-## Perbandingan Akurasi ML vs DL
+## Perbandingan Akurasi ML vs Deep Learning
 
-![ML vs DL](images/Perbandingan Akurasi IK Baru — ML vs DL.png)
+![ML vs DL](images/Perbandingan Akurasi IK Baru  ML vs DL.png)
 
 **Gambar 6.** Perbandingan rata-rata error seluruh metode.
 
@@ -278,9 +288,21 @@ yang lebih merepresentasikan performa fisik robot.
 
 ## Distribusi Error Semua Metode
 
-![All Methods](images/Analisis Distribusi Error End-Effector — Semua Metode Baru.png)
+![All Methods](images/Analisis Distribusi Error End-Effector  Semua Metode Baru.png)
 
-**Gambar 7.** Analisis distribusi error seluruh metode.
+**Gambar 7.** Distribusi error seluruh metode.
+
+---
+
+# 🖼️ Galeri Hasil Evaluasi
+
+| Training Curve                                       | Error ML                                                       |
+| ---------------------------------------------------- | -------------------------------------------------------------- |
+| ![](images/Training Curve Deep Learning (IKNet).png) | ![](images/Perbandingan Error End-Effector Metode ML Baru.png) |
+
+| Akurasi ML vs DL                                       | Distribusi Error                                                          |
+| ------------------------------------------------------ | ------------------------------------------------------------------------- |
+| ![](images/Perbandingan Akurasi IK Baru  ML vs DL.png) | ![](images/Analisis Distribusi Error End-Effector  Semua Metode Baru.png) |
 
 ---
 
@@ -343,10 +365,10 @@ Urutan eksekusi:
 ┃ ┣ 📷 workspace_robot_3dof.png
 ┃ ┣ 📷 Demo Visualisasi Robot.png
 ┃ ┣ 📷 Fungsi Reachability Check.png
-┃ ┣ 📷 Training Curve — Deep Learning (IKNet).png
-┃ ┣ 📷 Perbandingan Error End-Effector — Metode ML Baru.png
-┃ ┣ 📷 Perbandingan Akurasi IK Baru — ML vs DL.png
-┃ ┗ 📷 Analisis Distribusi Error End-Effector — Semua Metode Baru.png
+┃ ┣ 📷 Training Curve Deep Learning (IKNet).png
+┃ ┣ 📷 Perbandingan Error End-Effector Metode ML Baru.png
+┃ ┣ 📷 Perbandingan Akurasi IK Baru  ML vs DL.png
+┃ ┗ 📷 Analisis Distribusi Error End-Effector  Semua Metode Baru.png
 ┣ 📄 README.md
 ```
 
